@@ -1,6 +1,9 @@
 #My
 .env
 temp_readme.md
+.vscode
+temp.py
+d.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
