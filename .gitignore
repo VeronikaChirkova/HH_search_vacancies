@@ -2,7 +2,7 @@
 .env
 temp_readme.md
 .vscode
-temp.py
+temp.env
 d.py
 
 # Byte-compiled / optimized / DLL files
