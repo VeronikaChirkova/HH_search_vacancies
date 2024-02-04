@@ -1,11 +1,15 @@
-import os
-from venv import logger
-import requests
-import time
 import logging
-from requests import Session, session
+import os
+import time
+from venv import logger
+
+import requests
 from dotenv import load_dotenv
+from requests import Session, session
+
+from exceptions import NeedAuthOnHHError
 from send_email import send_email
+
 load_dotenv()
 
 logging.basicConfig(
@@ -80,13 +84,15 @@ experience: str, session: Session) -> list[dict]:
     logging.info(response.status_code)
     vacancia: dict = response.json()
 
+    if vacancia.get("errors"):
+        raise NeedAuthOnHHError("Need authorization on Headhunter")
+
     vacancies: list[dict] = []
     for item in vacancia["items"]:
         vacancies.append(
         {"name": item["name"], "id": item["id"], "url": item["url"], "salary": item["salary"],
         "experience": item["experience"]}
         )
-    time.sleep(14400)
     return vacancies
 
 
@@ -127,7 +133,7 @@ def response_vacancy(vacancy_id:int, session: Session):
         "Authorization": f"Bearer {os.getenv("USER_ACCESS_TOKEN")}",
         "HH-User-Agent": os.getenv("USER_AGENT"),
     }
-
+    print(headers)
     params = {
         "resume_id": os.getenv("ID_RESUME"),
         "vacancy_id": vacancy_id,

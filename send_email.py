@@ -1,31 +1,32 @@
 import os
 import smtplib
 from dotenv import load_dotenv
-import textwrap as tw
+from email.message import EmailMessage
 
 load_dotenv()
-login = os.getenv('EMAIL_LOGIN')
-password = os.getenv('EMAIL_PASSWORD')
-sender = os.getenv('SENDER_MAIL')
-receivers = os.getenv('RECEIVERS_MAIL')
 
 
-def send_email(message: str):
-    headers_and_text = f"""\
-    From: {sender}
-    To: {receivers}
-    Subject: Письмо от приложения Отклики_hh
-    Content-Type: text/plain; charset="UTF-8";
-    {message}
-    """
-    letter_without_indent = tw.dedent(headers_and_text)
-    letter = letter_without_indent.encode('utf-8')
+def send_email(message):
+    login = os.getenv("EMAIL_LOGIN")
+    password = os.getenv("EMAIL_PASSWORD")
+    sender = os.getenv("SENDER_MAIL")
+    receivers = os.getenv("RECEIVERS_MAIL")
 
-    server = smtplib.SMTP_SSL('smtp.yandex.ru:465')
+    # Open the plain text file whose name is in textfile for reading.
+    msg = EmailMessage()
+    # me == the sender's email address
+    # you == the recipient's email address
+    msg["Subject"] = "The contents of HH.API BOT"
+    msg["From"] = sender
+    msg["To"] = receivers
+    msg.set_content(message)
+
+    server = smtplib.SMTP_SSL(host="smtp.yandex.ru", port=465)
     server.login(login, password)
-    server.sendmail(sender, [receivers], letter)
+    server.send_message(msg)
     server.quit()
     print("Message sended.")
 
-if __name__ == '__main__':
-    send_email(message="hi")
+
+if __name__ == "__main__":
+    send_email(message="hello my friend Veronika")
