@@ -1,71 +1,89 @@
 # Получение вакансий по API
 
-1.Скачайте проект<br>
+1 Скачайте проект:<br>
 ```bash
-git clone <ссылка>
+git clone https://github.com/VeronikaChirkova/HH_search_vacancies.git
 ```
-2.Создайте виртуальное окружение<br>
+2 Создайте виртуальное окружение:<br>
 ```bash
 python -m venv venv
 ```
-3.Активируйте виртуальное окружение:
-Activate
+3 Активируйте виртуальное окружение:
 ```
 .\venv\Scripts\activate
 ```
-4.Установите библиотеку import requests<br>
+4 Установите библиотеку import requests и модуль python-dotenv:<br>
 ```bash
 pip install requests
+pip install python-dotenv
 ```
-5.Зарегистрируйте приложение на:<br>
+5 Зарегистрируйте приложение на:<br>
 ```text
-https://dev.hh.ru/
+https://dev.hh.ru
 ```
-6.Создайте файл .env и заполните неоходимыми данными<br>
-`CLIENT_EMAIL` - email пользователя<br>
-`CLIENT_ID` - Client ID на [dev.hh.ru](https://dev.hh.ru/)<br>
-`CLIENT_SECRET` - Client Secret на [dev.hh.ru](https://dev.hh.ru/)<br>
-`ID_RESUME` - id резюме, которым вы будете откликаться на вакнсии.<br>
+6 Создайте файл .env и заполните неоходимыми данными:<br>
+`CLIENT_EMAIL=` email пользователя<br>
+`CLIENT_ID=` Client ID из [dev.hh.ru](https://dev.hh.ru/)<br>
+`CLIENT_SECRET=` Client Secret из [dev.hh.ru](https://dev.hh.ru/)<br>
+`ID_RESUME=` id резюме, которым вы будете откликаться на вакансии<br>
+
+Данные для отправки сообщений:<br>
+`EMAIL_LOGIN=`your_login<br>
+`EMAIL_PASSWORD=`пароль приложения (не почты)<br>
+`SENDER_MAIL=`your_login@yandex.ru<br>
+`RECEIVERS_MAIL`=your_login@yandex.ru<br>
+
+### Отправка писем через yandex почту
+1 Войти в профиль yandex почты.<br>
+2 Перейти во вкладку безопасность -> пароли приложений -> создать пароль приложения<br>
+![Текст с описанием картинки](\C:\Python\HH_API\safety.png)
+3 Придумать имя пароля -> далее скопировать пароль в переменную `EMAIL_PASSWORD`.<br>
+![Текст с описанием картинки](\C:\Python\HH_API\password.png)
 
 ### Как узнать id резюме
-Зайдите на сайт [hh.ru](https://hh.ru).<br>
-Во вкладке **Мои резюме** выберите то резюме, которым будете откликаться.<br>
-В адресной строке браузера скопируйте все символы после resume/<br>
+1 Зайдите на сайт [hh.ru](https://hh.ru).<br>
+2 Во вкладке **Мои резюме** выберите то резюме, которым будете откликаться.<br>
+3 В адресной строке браузера скопируйте все символы после resume/<br>
 ```text
 https://novosibirsk.hh.ru/resume/9f123ed4ff0591a2420039ed1f8b5372627с00
 ```
-Вручную добавить `ID_RESUME` в файл .env.<br>
+4 Вручную добавить `ID_RESUME` в файл .env.<br>
 ```text
 ID_RESUME=9f123ed4ff0591a2420039ed1f8b5372627с00
 ```
 ### Авторизация приложения
-Токен приложения вызывается 1 раз, затем он появляется в [Личном кабинете](https://dev.hh.ru/).<br>
-Вызывается функция `get_app_token()`.<br>
-В файл .env автоматически записываются данные
-`APP_TOKEN` - токен приложения. <br>
-Новый токен возможно запросить через Х секунд.<br>
+1 Вызывается функция `get_app_token()`.<br>
+2 Токен приложения вызывается 1 раз, затем он появляется в [Личном кабинете](https://dev.hh.ru/).<br>
+3 Новый токен возможно запросить через Х секунд.<br>
 
 ### Авторизация пользователя
-Необходимо получить временный код для авторизации  `TEMP_USER_CODE`.<br>
-Для этого в браузере вручную ввести:<br>
+1 Необходимо получить временный код для авторизации  `TEMP_USER_CODE`.<br>
+2 На почту придет письмо с сылкой:<br>
 ```text
 https://hh.ru/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}
 ```
-Вручную добавить временный код в файл .env.<br>
-`TEMP_USER_CODE` - каждый раз новый, срок действия короткий (Х секунд).<br>
+3 Перейди по ссылке, авторизуйся и забери code.<br>
+Example code:<br>
+ ```text
+ code=P2TQRI2EJGMQVE6NIR8V8GC0EDAU9G5US8ONKE7MQ3GO5J0CD5HKDFUMMCU6BEOR
+ ```
+4 Code вставить в консоль, там где запущено приложение.<br>
+`CODE` - каждый раз новый, срок действия короткий (Х секунд).<br>
 
-Для получения access и refresh token необходимо вызвать функцию `get_user_token()`.<br>
+5 Для получения access и refresh token необходимо вызвать функцию `get_user_token()`.<br>
+
+Точно до последнего знака указать в функции знаяение `redirect_uri`, как в [Личном кабинете](https://dev.hh.ru/).<br>
 ```text
 USER_ACCESS_TOKEN=
 USER_REFRESH_TOKEN=
 ACCESS_TOKEN_VALID=
 ```
-Данные записываются в файл .env автоматически.<br>
+6 Данные записываются в файл .env автоматически.<br>
 
 `USER_ACCESS_TOKEN` выдается на 14 дней.<br>
 
 ### Если не отправляются отклики
-1 Проверить наличие необходимых переменных в файле .env, вызвав функцию `check_envs()`<br>
+1 Проверить наличие необходимых переменных в файле .env, вызвав функцию `check_envs()`.<br>
 2 Проверить в файле .env до какой даты активен access token:<br>
 ```text
 ACCESS_TOKEN_VALID=2024-02-12 00:00:00
@@ -73,6 +91,29 @@ ACCESS_TOKEN_VALID=2024-02-12 00:00:00
 Access token выдается на 14 дней.<br>
 
 ### Ошибки
-exceptions.EnvNotFound: Приложение ожидает, что вы укажете в .env следующие переменные вручную:
-    "USER_AGENT","CLIENT_EMAIL", "ID_RESUME", "CLIENT_ID", "CLIENT_SECRET", "EMAIL_LOGIN", "EMAIL_PASSWORD", "SENDER_MAIL", "RECEIVERS_MAIL".<br>
-формат записи USER_AGENT="<название приложения> (${CLIENT_EMAIL})"
+**Exceptions.EnvNotFound:** Приложение ожидает, что вы укажете в .env следующие переменные вручную:<br>
+```text
+"USER_AGENT",
+"CLIENT_EMAIL",
+"ID_RESUME",
+"CLIENT_ID",
+"CLIENT_SECRET",
+"EMAIL_LOGIN",
+"EMAIL_PASSWORD",
+"SENDER_MAIL",
+"RECEIVERS_MAIL"
+```
+Формат записи `USER_AGENT="<название приложения> (${CLIENT_EMAIL})"`.
+
+### Запуск
+Задать переменные поиска:
+
+`name_vacancia` - название вакансии,<br>
+`area` - страна/город/регион поиска,<br>
+`period` - количество дней, в пределах которых производится поиск по вакансиям (max=30),<br>
+`schedule` - график работы (remote - удаленная работа, fullDay - полный день, shift - сменный график, flexible - гибкий график),<br>
+`experience` - опыт работы (noExperience - нет опыта, <br>
+between_1_and_3 - от 1 года до 3 лет,between_3_and_6 = от 3 до 6 лет, more_6 = более 6 лет).<br>
+```bash
+python main.py
+```

@@ -1,0 +1,2 @@
+PATH_TO_ENV = "./.env"
+DAY_IN_SECONDS = 86400

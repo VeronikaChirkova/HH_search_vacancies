@@ -3,20 +3,13 @@ import os
 import time
 from venv import logger
 
-import requests
 from dotenv import load_dotenv
 from requests import Session, session
 
 from exceptions import NeedAuthOnHHError
-from send_email import send_email
 
 load_dotenv()
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(funcName)s: %(lineno)d - %(message)s',
-    datefmt='%d-%b-%y %H:%M:%S',
-    filename = "mylog.log")
 
 def get_areas(name: str, session: Session):
     """Поиск id страны/региона/города.
@@ -29,7 +22,7 @@ def get_areas(name: str, session: Session):
     """
 
     headers = {
-        "Authorization": f"Bearer {os.getenv("USER_ACCESS_TOKEN")}",
+        "Authorization": f"Bearer {os.getenv('USER_ACCESS_TOKEN')}",
         "HH-User-Agent": os.getenv("USER_AGENT"),
     }
 
@@ -48,11 +41,17 @@ def get_areas(name: str, session: Session):
                 for city in region["areas"]:
                     if city["name"] == name:
                         return city["id"]
-    logging.critical(f'{name}: не найдено')
+    logging.critical(f"{name}: не найдено")
 
 
-def get_vacancies(name_vacancia: str, area: str, period: int, schedule: str,
-experience: str, session: Session) -> list[dict]:
+def get_vacancies(
+    name_vacancia: str,
+    area: str,
+    period: int,
+    schedule: str,
+    experience: str,
+    session: Session,
+) -> list[dict]:
     """Поиск вакансий на HeadHunter.
 
     name_vacancia: название вакансии,
@@ -64,7 +63,7 @@ experience: str, session: Session) -> list[dict]:
     """
 
     headers = {
-        "Authorization": f"Bearer {os.getenv("USER_ACCESS_TOKEN")}",
+        "Authorization": f"Bearer {os.getenv('USER_ACCESS_TOKEN')}",
         "HH-User-Agent": os.getenv("USER_AGENT"),
     }
 
@@ -76,10 +75,12 @@ experience: str, session: Session) -> list[dict]:
         "employment": "full",
         "schedule": schedule,
         "area": get_areas(name=area, session=session),
-        "period": period
+        "period": period,
     }
 
-    response = session.get("https://api.hh.ru/vacancies", params=params, headers=headers)
+    response = session.get(
+        "https://api.hh.ru/vacancies", params=params, headers=headers
+    )
     response.raise_for_status
     logging.info(response.status_code)
     vacancia: dict = response.json()
@@ -90,8 +91,13 @@ experience: str, session: Session) -> list[dict]:
     vacancies: list[dict] = []
     for item in vacancia["items"]:
         vacancies.append(
-        {"name": item["name"], "id": item["id"], "url": item["url"], "salary": item["salary"],
-        "experience": item["experience"]}
+            {
+                "name": item["name"],
+                "id": item["id"],
+                "url": item["url"],
+                "salary": item["salary"],
+                "experience": item["experience"],
+            }
         )
     return vacancies
 
@@ -110,15 +116,24 @@ def filter_vacancies(vacancies: list, blacklist: list) -> list:
     """
 
     filtered_vacancies = []
-    blacklist = ['Python 2', 'PyQt', 'C++', 'Преподаватель', 'Курсовые работы',
-                'Middle', 'Senior', 'Auto QA', 'Наставник']
+    blacklist = [
+        "Python 2",
+        "PyQt",
+        "C++",
+        "Преподаватель",
+        "Курсовые работы",
+        "Middle",
+        "Senior",
+        "Auto QA",
+        "Наставник",
+    ]
 
     for vacancy in vacancies:
         if vacancy["salary"] == None:
             continue
         elif blacklist:
             for word in blacklist:
-                if word in vacancy['name']:
+                if word in vacancy["name"]:
                     break
             else:
                 filtered_vacancies.append(vacancy)
@@ -126,19 +141,21 @@ def filter_vacancies(vacancies: list, blacklist: list) -> list:
     return filtered_vacancies
 
 
-def response_vacancy(vacancy_id:int, session: Session):
+def response_vacancy(vacancy_id: int, session: Session):
     """Отклик на вакансию.
+
+    Args:
+        vacancy_id (int): id вакансии на которую хотим откликнуться.
     """
     headers = {
-        "Authorization": f"Bearer {os.getenv("USER_ACCESS_TOKEN")}",
+        "Authorization": f"Bearer {os.getenv('USER_ACCESS_TOKEN')}",
         "HH-User-Agent": os.getenv("USER_AGENT"),
     }
-    print(headers)
     params = {
         "resume_id": os.getenv("ID_RESUME"),
         "vacancy_id": vacancy_id,
-        "message": "Здравствуйте! Данный отклик отправлен в рамках реализации проекта по автоматизации поиска вакансий."
-        }
+        "message": "Здравствуйте! Данный отклик отправлен в рамках реализации проекта по автоматизации поиска вакансий.",
+    }
 
     url = "https://api.hh.ru/negotiations"
     response = session.post(url, params=params, headers=headers)
@@ -148,9 +165,25 @@ def response_vacancy(vacancy_id:int, session: Session):
 
 
 if __name__ == "__main__":
-    get_vacancies(name_vacancia="python junior",
-                    area="Новосибирск",
-                    period=30,
-                    schedule="remote",
-                    experience="noExperience",
-                    session=session())
+    vacancies = get_vacancies(
+        name_vacancia="python junior",
+        area="Новосибирск",
+        period=30,
+        schedule="remote",
+        experience="noExperience",
+        session=session(),
+    )
+    filter_vacancies(
+        vacancies=vacancies,
+        blacklist=[
+            "Python 2",
+            "PyQt",
+            "C++",
+            "Преподаватель",
+            "Курсовые работы",
+            "Middle",
+            "Senior",
+            "Auto QA",
+            "Наставник",
+        ],
+    )

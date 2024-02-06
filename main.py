@@ -1,35 +1,26 @@
 import logging
-import os
 import time
-from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
-from requests import Session, session
+from requests import Session
 
-import authorization
-from authorization import get_app_token, get_temp_user_code, get_user_token, write_file
+from authorization import get_temp_user_code, get_user_token, write_file
+from consts import DAY_IN_SECONDS, PATH_TO_ENV
 from exceptions import EnvNotFoundError, NeedAuthOnHHError, NeedStopProgramError
 from hh_API import filter_vacancies, get_vacancies, response_vacancy
 from send_email import send_email
 
-load_dotenv()
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(funcName)s: %(lineno)d - %(message)s",
-    datefmt="%d-%b-%y %H:%M:%S",
-    filename="mylog.log",
-)
+load_dotenv(dotenv_path=PATH_TO_ENV)
 
-DAY_IN_SECONDS = 86400
 
 
 def auth():
     """Получение необходимых токенов для работы приложения"""
     code = get_temp_user_code()
     tokens = get_user_token(code)
-    write_file(name_file=".env", tokens=tokens)
+    write_file(tokens=tokens)
 
 
 def response_vacancies(session: Session):
@@ -70,7 +61,7 @@ def response_vacancies(session: Session):
             for vacancy in filtered_vacancies:
                 info = response_vacancy(vacancy_id=vacancy["id"], session=session)
                 report.append(info)
-                logging.info("Осуществлен отклик на все вакансии.")
+                logging.info("Откликнулся на все вакансии.")
                 counter += 1
                 if counter == 50:
                     break
@@ -90,7 +81,6 @@ def check_envs() -> bool:
         readed_file = file.read()
         res = readed_file.split("\n")
 
-    # checked_variables = ["CLIENT_EMAIL", "ID_RESUME", "CLIENT_ID", "CLIENT_SECRET", "APP_TOKEN", "TEMP_USER_CODE", "EMAIL_LOGIN", "EMAIL_PASSWORD", "SENDER_MAIL", "RECEIVERS_MAIL"]
     checked_variables = [
         "USER_AGENT",
         "CLIENT_EMAIL",
@@ -116,6 +106,14 @@ def check_envs() -> bool:
 
 def main():
     """Точка входа"""
+
+    logging.basicConfig(
+        level=logging.ERROR,
+        format="%(asctime)s - %(levelname)s - %(funcName)s: %(lineno)d - %(message)s",
+        datefmt="%d-%b-%y %H:%M:%S",
+        filename="mylog.log",
+    )
+
     if not check_envs():
         msg = "Прочти ридми и установи необходимые переменные."
         logging.critical(msg)
@@ -127,4 +125,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # print(check_envs())
