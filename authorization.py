@@ -88,7 +88,7 @@ def get_user_token(code: str) -> dict:
         "client_secret": os.getenv("CLIENT_SECRET"),
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": "https://hh.ru/",
+        "redirect_uri": "https://hh.ru",
     }
 
     response = requests.post("https://api.hh.ru/token", data=data, headers=headers)

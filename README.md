@@ -10,12 +10,11 @@ python -m venv venv
 ```
 3 Активируйте виртуальное окружение:
 ```
-.\venv\Scripts\activate
+../venv/bin/activate
 ```
-4 Установите библиотеку import requests и модуль python-dotenv:<br>
+4 Установите зависимости:<br>
 ```bash
-pip install requests
-pip install python-dotenv
+pip install -r requirements.txt
 ```
 5 Зарегистрируйте приложение на:<br>
 ```text
@@ -72,7 +71,7 @@ Example code:<br>
 
 5 Для получения access и refresh token необходимо вызвать функцию `get_user_token()`.<br>
 
-Точно до последнего знака указать в функции знаяение `redirect_uri`, как в [Личном кабинете](https://dev.hh.ru/).<br>
+Точно до последнего знака указать в функции значение `redirect_uri`, как в [Личном кабинете](https://dev.hh.ru/).<br>
 ```text
 USER_ACCESS_TOKEN=
 USER_REFRESH_TOKEN=
@@ -117,3 +116,41 @@ between_1_and_3 - от 1 года до 3 лет,between_3_and_6 = от 3 до 6 
 ```bash
 python main.py
 ```
+
+## Запуск в докере
+1. Создайте нового пользователя `appuser` без домашней директории и добавьте его в группу `appuser` на локальном ПК.<br>
+
+```bash
+useradd -M appuser -u 3000 -g 3000 && sudo usermod -L appuser &&sudo usermod -aG appuser appuser
+```
+Это необходимо для обеспечения безопасности, чтобы запуск процессов внутри контейнера осуществлялся от пользователя, который не имеет никаких прав на хостовой машине.<br>
+
+UID (GID) пользователя в контейнере и пользователя за пределами контейнера, у которого есть соответствующие права на доступ к файлу, должны соответствовать.<br>
+
+2. В Dockerfile необходимо прописать: UID (GID), создание пользователя и передачу ему прав, смену пользователя.<br>
+```text
+ARG UNAME=appuser
+ARG UID
+ARG GID
+
+# create user
+RUN groupadd -g ${GID} ${UNAME} &&\
+useradd ${UNAME} -u ${UID} -g ${GID} &&\
+usermod -L ${UNAME} &&\
+usermod -aG ${UNAME} ${UNAME}
+
+# chown all the files to the app user
+RUN chown -R ${UNAME}:${UNAME} /app
+
+USER ${UNAME}
+```
+3. Команда для создания образа (обязательно указать UID (GID)):<br>
+
+```bash
+docker build . --build-arg UID=3000 --build-arg GID=3000 -f Dockerfile -t hh_api
+```
+4. Создайте и запустите контейнер:<br>
+```bash
+docker run --rm --name hh_api --env-file .env hh_api
+```
+Файл с конфиденциальными данными передается `--env-file`.<br>

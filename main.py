@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 import requests
@@ -13,7 +14,6 @@ from send_email import send_email
 
 
 load_dotenv(dotenv_path=PATH_TO_ENV)
-
 
 
 def auth():
@@ -76,11 +76,9 @@ def response_vacancies(session: Session):
 def check_envs() -> bool:
     """
     Проверка переменныъх в .env
-    """
-    with open(".env", "r") as file:
-        readed_file = file.read()
-        res = readed_file.split("\n")
 
+    --env-file .env
+    """
     checked_variables = [
         "USER_AGENT",
         "CLIENT_EMAIL",
@@ -92,15 +90,10 @@ def check_envs() -> bool:
         "SENDER_MAIL",
         "RECEIVERS_MAIL",
     ]
-    res_keys = [res_str.split("=")[0] for res_str in res if len(res_str) > 1]
-    for key in checked_variables:
-        if not key in res_keys:
+    for env_var in checked_variables:
+        token = os.getenv(env_var)
+        if token is None:
             return False
-        for env_str in res:
-            splitted_str: list = env_str.split("=")
-            if key == splitted_str[0]:
-                if len(splitted_str) < 2:
-                    return False
     return True
 
 
@@ -118,7 +111,7 @@ def main():
         msg = "Прочти ридми и установи необходимые переменные."
         logging.critical(msg)
         raise EnvNotFoundError(msg)
-
+    print("ok")
     with requests.Session() as session:
         response_vacancies(session)
 
