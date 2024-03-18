@@ -2,8 +2,8 @@ FROM python:3.10.12
 
 #docker build --build-arg UID=3000 --build-arg GID=3000...
 ARG UNAME=appuser
-ARG UID
-ARG GID
+ARG UID=3000
+ARG GID=3000
 
 # create user
 RUN groupadd -g ${GID} ${UNAME} &&\

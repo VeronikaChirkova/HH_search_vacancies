@@ -7,11 +7,6 @@
 .travis.yml
 .taskcluster.yml
 
-# Docker
-Dockerfile
-docker-compose.yml
-.docker
-.dockerignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
