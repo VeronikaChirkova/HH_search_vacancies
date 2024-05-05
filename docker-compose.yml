@@ -7,4 +7,4 @@ services:
     container_name: hh_api
     env_file:
       - .env
-    restart: no
+    restart: "no"

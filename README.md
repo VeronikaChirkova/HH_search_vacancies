@@ -10,7 +10,7 @@ python -m venv venv
 ```
 3 Активируйте виртуальное окружение:
 ```
-../venv/bin/activate
+. ./venv/bin/activate
 ```
 4 Установите зависимости:<br>
 ```bash
