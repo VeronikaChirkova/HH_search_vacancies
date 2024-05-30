@@ -1,17 +1,17 @@
+import json
 import logging
 import os
 import time
 
 import requests
 from dotenv import load_dotenv
-from requests import Session
+from requests import HTTPError, Session
 
 from authorization import get_temp_user_code, get_user_token, write_file
 from consts import DAY_IN_SECONDS, PATH_TO_ENV
 from exceptions import EnvNotFoundError, NeedAuthOnHHError, NeedStopProgramError
 from hh_API import filter_vacancies, get_vacancies, response_vacancy
 from send_email import send_email
-
 
 load_dotenv(dotenv_path=PATH_TO_ENV)
 
@@ -28,11 +28,13 @@ def response_vacancies(session: Session):
     while True:
         try:
             vacancies = get_vacancies(
-                name_vacancia="Python",
+                name_vacancia="python",
                 area="Новосибирск",
                 period=30,
-                schedule="remote",
+                schedule="fullDay",
+                # schedule="remote",
                 experience="noExperience",
+                # experience="between1And3",
                 session=session,
             )
         except NeedAuthOnHHError:
@@ -50,27 +52,55 @@ def response_vacancies(session: Session):
                 "Преподаватель",
                 "Курсовые работы",
                 "Middle",
-                "Senior",
+                "middle" "Senior",
                 "Auto QA",
+                "QA",
                 "Наставник",
+                "Продакт",
+                "SDET",
+                "Аналитик",
+                "Старший инженер",
+                "Ведущий",
+                "AI",
             ],
         )
+
+        count = 0
         report = []
-        counter = 0
         if len(filtered_vacancies) > 0:
             for vacancy in filtered_vacancies:
-                info = response_vacancy(vacancy_id=vacancy["id"], session=session)
-                report.append(info)
-                logging.info("Откликнулся на все вакансии.")
-                counter += 1
-                if counter == 50:
-                    break
-            send_email(message=report)
+                if vacancy["id"] in open("already_applied_vacancies.txt").read():
+                    continue
+                else:
+                    try:
+                        info = response_vacancy(
+                            vacancy_id=vacancy["id"], session=session
+                        )
+                        with open("already_applied_vacancies.txt", "a") as file:
+                            json.dump(
+                                obj=vacancy["id"], fp=file, ensure_ascii=False, indent=4
+                            )
+                            msg = vacancy["url"]
+                            report.append(msg)
+                    except HTTPError as err:
+                        logging.info(err.response.content)
+                        with open("already_applied_vacancies.txt", "a") as file:
+                            json.dump(
+                                obj=vacancy["id"], fp=file, ensure_ascii=False, indent=4
+                            )
+                        continue
+
+            count += 1
+            msg = f"Откликнулся на {report}. Новых вакансий нет."
+            send_email(message=msg)
+            logging.info(msg)
+            time.sleep(DAY_IN_SECONDS)
+
         else:
-            info = "Новых вакансий нет."
+            info = "По запросу ничего не найдено."
             send_email(message=info)
             logging.debug(info)
-            time.sleep(DAY_IN_SECONDS)
+            break
 
 
 def check_envs() -> bool:
@@ -100,11 +130,15 @@ def check_envs() -> bool:
 def main():
     """Точка входа"""
 
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(filename="mylog.log", encoding="utf-8")
+
     logging.basicConfig(
-        level=logging.ERROR,
+        level=logging.DEBUG,
         format="%(asctime)s - %(levelname)s - %(funcName)s: %(lineno)d - %(message)s",
         datefmt="%d-%b-%y %H:%M:%S",
-        filename="mylog.log",
+        handlers=[stream_handler, file_handler],
     )
 
     if not check_envs():

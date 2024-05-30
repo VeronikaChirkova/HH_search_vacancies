@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import time
@@ -28,7 +29,7 @@ def get_areas(name: str, session: Session):
 
     url = "https://api.hh.ru/areas"
     response = session.get(url, headers=headers)
-    response.raise_for_status
+    response.raise_for_status()
     countries = response.json()
 
     for country in countries:
@@ -69,6 +70,7 @@ def get_vacancies(
 
     params = {
         "per_page": "100",
+        "page": 0,
         "text": name_vacancia,
         "search_field": "name",
         "experience": experience,
@@ -78,27 +80,42 @@ def get_vacancies(
         "period": period,
     }
 
-    response = session.get(
-        "https://api.hh.ru/vacancies", params=params, headers=headers
-    )
-    response.raise_for_status
-    logging.info(response.status_code)
-    vacancia: dict = response.json()
-
-    if vacancia.get("errors"):
-        raise NeedAuthOnHHError("Need authorization on Headhunter")
-
     vacancies: list[dict] = []
-    for item in vacancia["items"]:
-        vacancies.append(
-            {
-                "name": item["name"],
-                "id": item["id"],
-                "url": item["url"],
-                "salary": item["salary"],
-                "experience": item["experience"],
-            }
+
+    while True:
+        if len(vacancies) == 2000:
+            logger.debug("Достигнут предел возвращаемых вакансиий = 2000")
+            break
+
+        response = session.get(
+            "https://api.hh.ru/vacancies", params=params, headers=headers
         )
+        response.raise_for_status()
+        logging.info(response.status_code)
+        vacancia: dict = response.json()
+
+        if vacancia["page"] >= vacancia["pages"]:
+            break
+
+        for item in vacancia["items"]:
+            response = session.get(
+                f"https://api.hh.ru/vacancies/{item['id']}",
+                params=params,
+                headers=headers,
+            )
+            vacancies.append(
+                {
+                    "name": item["name"],
+                    "id": item["id"],
+                    "url": item["url"],
+                    "salary": item["salary"],
+                    "experience": item["experience"],
+                    "has_test": item["has_test"],
+                }
+            )
+
+        params["page"] += 1
+
     return vacancies
 
 
@@ -123,13 +140,22 @@ def filter_vacancies(vacancies: list, blacklist: list) -> list:
         "Преподаватель",
         "Курсовые работы",
         "Middle",
+        "middle+",
+        "Python middle разработчик",
         "Senior",
         "Auto QA",
+        "QA",
         "Наставник",
+        "Продакт",
+        "SDET",
+        "Аналитик",
+        "Старший инженер",
+        "Ведущий",
+        "AI",
     ]
 
     for vacancy in vacancies:
-        if vacancy["salary"] == None:
+        if vacancy["has_test"] == True:
             continue
         elif blacklist:
             for word in blacklist:
@@ -154,23 +180,36 @@ def response_vacancy(vacancy_id: int, session: Session):
     params = {
         "resume_id": os.getenv("ID_RESUME"),
         "vacancy_id": vacancy_id,
-        "message": "Здравствуйте! Данный отклик отправлен в рамках реализации проекта по автоматизации поиска вакансий.",
+        "message": f"""Здравствуйте! Пока вы читаете это сообщение - я пишу код.
+        Меня зовут Чиркова Вероника и данный отклик отправлен автоматически, в рамках проекта автоматизации поиска вакансий.
+        Я открыта к предложениям и нахожусь в поиске работы.
+
+        Мои контакты:
+        email: nika-chirkova@mail.ru
+        telegram: https://t.me/veronika_cs
+        Github: https://github.com/VeronikaChirkova
+        С уважением, Чиркова Вероника.
+        """,
     }
 
     url = "https://api.hh.ru/negotiations"
     response = session.post(url, params=params, headers=headers)
-    response.raise_for_status
+    response.raise_for_status()
+    msg = f"Откликнулся на вакансию {vacancy_id}"
     time.sleep(30)
     logging.info(response.status_code)
+    return msg
 
 
 if __name__ == "__main__":
     vacancies = get_vacancies(
-        name_vacancia="python junior",
+        name_vacancia="python",
         area="Новосибирск",
         period=30,
-        schedule="remote",
+        schedule="fullDay",
+        # schedule="remote",
         experience="noExperience",
+        # experience="between1And3",
         session=session(),
     )
     filter_vacancies(
@@ -182,8 +221,15 @@ if __name__ == "__main__":
             "Преподаватель",
             "Курсовые работы",
             "Middle",
-            "Senior",
+            "middle" "Senior",
             "Auto QA",
+            "QA",
             "Наставник",
+            "Продакт",
+            "SDET",
+            "Аналитик",
+            "Старший инженер",
+            "Ведущий",
+            "AI",
         ],
     )
